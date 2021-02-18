@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/zapi/zapi"
 	"github.com/zhenshaw/go-lib/logs"
+	"github.com/zhenshaw/zapi"
 )
 
 func main() {
