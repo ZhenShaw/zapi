@@ -88,15 +88,15 @@ func (r *Router) Use(middleware ...IHandler) *Router {
 }
 
 // build handler chain for api.
-// execute order: prefix handlers --> api handlers --> api final handler
+// execute order: prefix handlers(middlewares) --> api handlers(middlewares) --> api final handler
 func (r *Router) buildHandlerChain() {
 	for _, api := range r.apis {
 		for prefix, handlers := range r.prefixHandlers {
 			if strings.HasPrefix(api.fullPath, prefix) {
-				api.handlers = append(api.handlers, api.Handler)
 				api.handlers = append(handlers, api.handlers...)
 			}
 		}
+		api.handlers = append(api.handlers, api.Handler)
 	}
 }
 

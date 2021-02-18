@@ -7,11 +7,11 @@ import (
 
 type IContext interface {
 	Init(handlers []IHandler, w http.ResponseWriter, r *http.Request)
-	Start()
+	Start(ctx IContext)
 	Next()
 	Finish()
 	Reset()
-	Handle(IHandler)
+	Switch(IHandler)
 	GetRequest() *http.Request
 	GetWriter() http.ResponseWriter
 }
@@ -24,6 +24,8 @@ type BaseContext struct {
 
 	// mark index in handlers chain
 	index int
+
+	ctx IContext
 }
 
 func (z *BaseContext) Init(handlers []IHandler, w http.ResponseWriter, r *http.Request) {
@@ -33,19 +35,19 @@ func (z *BaseContext) Init(handlers []IHandler, w http.ResponseWriter, r *http.R
 }
 
 /*
-Handle assert the exact argument type of a handler.
+Switch assert the exact argument type of a handler.
 When implement BaseContext in a new struct, it must rewrite this function, for example:
 
-func (c *MyCtx) Handle(handler IHandler) {
+func (c *MyCtx) Switch(handler IHandler) {
 	switch handleFun := handler.(type) {
 	case func(*MyCtx):
 		handleFun(c)
 	default:
-		c.BaseContext.Handle(handler)
+		c.BaseContext.Switch(handler)
 	}
 }
 */
-func (z *BaseContext) Handle(handler IHandler) {
+func (z *BaseContext) Switch(handler IHandler) {
 
 	switch handleFun := handler.(type) {
 	case func(*BaseContext):
@@ -53,18 +55,18 @@ func (z *BaseContext) Handle(handler IHandler) {
 	case func(IContext):
 		handleFun(z)
 	default:
-		reflect.TypeOf(handleFun)
 		fn := reflect.ValueOf(handler)
-		fn.Call([]reflect.Value{reflect.ValueOf(z)})
+		fn.Call([]reflect.Value{reflect.ValueOf(z.ctx)})
 	}
 }
 
 // Start execute the first handler of handler chain.
 // Warning: Do not rewrite unless you known what you are doing.
-func (z *BaseContext) Start() {
+func (z *BaseContext) Start(ctx IContext) {
+	z.ctx = ctx
 	if len(z.handlers) != 0 && z.index == 0 {
 		z.index++
-		z.Handle(z.handlers[0])
+		ctx.Switch(z.handlers[0])
 	}
 }
 
@@ -77,7 +79,7 @@ func (z *BaseContext) Next() {
 	}
 	handler := z.handlers[z.index]
 	z.index++
-	z.Handle(handler)
+	z.ctx.Switch(handler)
 }
 
 // Finish allow you do some extra work after the last handler was executed.

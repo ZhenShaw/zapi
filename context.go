@@ -23,14 +23,14 @@ func (c *Context) Init(handlers []IHandler, w http.ResponseWriter, r *http.Reque
 	c.BaseContext.Init(handlers, w, r)
 }
 
-func (c *Context) Handle(handler IHandler) {
-	switch handleFun := handler.(type) {
-	case func(*Context):
-		handleFun(c)
-	default:
-		c.BaseContext.Handle(handler)
-	}
-}
+//func (c *Context) Switch(handler IHandler) {
+//	switch handleFun := handler.(type) {
+//	case func(*Context):
+//		handleFun(c)
+//	default:
+//		c.BaseContext.Switch(handler)
+//	}
+//}
 
 func (c *Context) Reset() {
 	c.BaseContext.Reset()
