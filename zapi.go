@@ -92,7 +92,7 @@ func (app *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (app *app) HandleRequest(api *Api, w http.ResponseWriter, r *http.Request) {
     ctx := api.GetContext()
-    ctx.Init(api.handlers, w, r)
+    ctx.Init(api.Handlers, w, r)
     ctx.Start(ctx)
     api.PutContext(ctx)
 }

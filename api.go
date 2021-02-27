@@ -1,6 +1,7 @@
 package zapi
 
 import (
+    "fmt"
     "reflect"
     "sync"
 )
@@ -19,14 +20,11 @@ type Api struct {
     // Path if the path defined without prefix.
     Path string
 
-    // final handler of api.
-    Handler IHandler
-
     // fullPath contacts the prefix and path.
     fullPath string
 
     // handler chain, it stores the middleware and the final handler will be added to the end.
-    handlers []IHandler
+    Handlers []IHandler
 
     // pool for reusing context.
     pool sync.Pool
@@ -48,13 +46,19 @@ func (api *Api) PutContext(ctx IContext) {
     api.pool.Put(ctx)
 }
 
-func NewCtx(c IContext) IContext {
+func (api *Api) CheckHandlers() error {
 
-    rv := reflect.ValueOf(c)
-    rt := reflect.Indirect(rv).Type()
+    rt := reflect.TypeOf(api.Context)
+    funcSign := fmt.Sprintf("func(%v)", rt)
 
-    value := reflect.New(rt)
-    ctx := value.Interface().(IContext)
+    for _, h := range api.Handlers {
+        sign := fmt.Sprint(reflect.TypeOf(h))
+        if sign != funcSign && sign != iFaceFuncSign {
+            err := fmt.Errorf("[%s] can only sign as: %s or %s, but got %s",
+                api.fullPath, funcSign, iFaceFuncSign, sign)
+            return err
+        }
+    }
 
-    return ctx
+    return nil
 }

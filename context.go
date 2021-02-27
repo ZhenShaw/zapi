@@ -12,15 +12,17 @@ type Context struct {
 }
 
 /*
-	Implement and rewrite.
-
-	Init()
-	Call()
-	Reset()
+	Implement and rewrite functions.
 */
 
 func (c *Context) Init(handlers []IHandler, w http.ResponseWriter, r *http.Request) {
     c.BaseContext.Init(handlers, w, r)
+    // init other fields below if has.
+}
+
+func (c *Context) Reset() {
+    c.BaseContext.Reset()
+    // reset other fields below if has.
 }
 
 func (c *Context) Call(handler IHandler) {
@@ -30,10 +32,6 @@ func (c *Context) Call(handler IHandler) {
     default:
         c.BaseContext.Call(handler)
     }
-}
-
-func (c *Context) Reset() {
-    c.BaseContext.Reset()
 }
 
 /*

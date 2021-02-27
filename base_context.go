@@ -5,15 +5,30 @@ import (
     "reflect"
 )
 
+const iFaceFuncSign = "func(zapi.IContext)"
+
 type IContext interface {
-    Init(handlers []IHandler, w http.ResponseWriter, r *http.Request)
-    Start(ctx IContext)
+    Init([]IHandler, http.ResponseWriter, *http.Request)
+    Start(IContext)
+
+    Call(IHandler)
     Next()
     Finish()
     Reset()
-    Call(IHandler)
+
     GetRequest() *http.Request
     GetWriter() http.ResponseWriter
+}
+
+func NewCtx(c IContext) IContext {
+
+    rv := reflect.ValueOf(c)
+    rt := reflect.Indirect(rv).Type()
+
+    value := reflect.New(rt)
+    ctx := value.Interface().(IContext)
+
+    return ctx
 }
 
 type BaseContext struct {
@@ -57,7 +72,7 @@ func (z *BaseContext) Call(handler IHandler) {
     case func(*BaseContext):
         handleFun(z)
     case func(IContext):
-        handleFun(z)
+        handleFun(z.ctx)
     default:
         fn := reflect.ValueOf(handler)
         fn.Call([]reflect.Value{reflect.ValueOf(z.ctx)})
@@ -91,7 +106,7 @@ func (z *BaseContext) Next() {
 }
 
 // Finish allow you do some extra work after the last handler was executed.
-func (z *BaseContext) Finish() {panic(111)}
+func (z *BaseContext) Finish() {}
 
 // Reset set zero value for reusing context struct in sync pool.
 func (z *BaseContext) Reset() {
