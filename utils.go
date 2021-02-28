@@ -11,6 +11,17 @@ func Wrap(handleFun func(http.ResponseWriter, *http.Request)) IHandler {
     }
 }
 
+func WrapHttp(handler IHandler) IHandler {
+    switch h := handler.(type) {
+    case func(http.ResponseWriter, *http.Request):
+        return Wrap(h)
+    case http.HandlerFunc:
+        return Wrap(h.ServeHTTP)
+    default:
+        return handler
+    }
+}
+
 func NewCtx(c IContext) IContext {
 
     rv := reflect.ValueOf(c)

@@ -101,7 +101,7 @@ func (r *Router) copy() *Router {
 func (r *Router) buildHandlerChain() {
 
     var prefixes []string
-    for prefix, _ := range r.prefixHandlers {
+    for prefix := range r.prefixHandlers {
         prefixes = append(prefixes, prefix)
     }
     sort.Strings(prefixes)
@@ -115,6 +115,10 @@ func (r *Router) buildHandlerChain() {
             }
         }
         api.handlers = append(mvs, api.handlers...)
+
+        for k, h := range api.handlers {
+            api.handlers[k] = WrapHttp(h)
+        }
     }
 }
 
