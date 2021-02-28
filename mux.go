@@ -1,28 +1,15 @@
-// code in this file is copied from github.com/gorilla/mux/mux.go
-// for using in zapi directly.
-
+// using go:linkname to force export private function.
 package zapi
 
 import (
-	"context"
-	"net/http"
+    "net/http"
+    _ "unsafe"
 
-	"github.com/gorilla/mux"
+    "github.com/gorilla/mux"
 )
 
-type contextKey int
+//go:linkname requestWithVars github.com/gorilla/mux.requestWithVars
+func requestWithVars(r *http.Request, vars map[string]string) *http.Request
 
-const (
-	varsKey contextKey = iota
-	routeKey
-)
-
-func requestWithVars(r *http.Request, vars map[string]string) *http.Request {
-	ctx := context.WithValue(r.Context(), varsKey, vars)
-	return r.WithContext(ctx)
-}
-
-func requestWithRoute(r *http.Request, route *mux.Route) *http.Request {
-	ctx := context.WithValue(r.Context(), routeKey, route)
-	return r.WithContext(ctx)
-}
+//go:linkname requestWithRoute github.com/gorilla/mux.requestWithRoute
+func requestWithRoute(r *http.Request, route *mux.Route) *http.Request
