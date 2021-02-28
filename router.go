@@ -3,13 +3,16 @@ package zapi
 import (
     "fmt"
     "net/http"
-    "net/url"
     "sort"
     "strings"
 
     "github.com/google/uuid"
     "github.com/gorilla/mux"
 )
+
+var allMethods = []string{http.MethodGet, http.MethodHead, http.MethodPost,
+    http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodConnect,
+    http.MethodOptions, http.MethodTrace}
 
 // Router registers routes to be matched and dispatches a handler.
 // It implements http.Handler interface, so it can be registered to serve.
@@ -115,45 +118,7 @@ func (r *Router) buildHandlerChain() {
     }
 }
 
-// find methods of full-path the api supports.
-func (r *Router) buildMethods() {
-    for _, api := range r.apis {
-        api.methods = matchMethods(r, api.fullPath)
-    }
-}
-
-func matchMethods(r *Router, fullPath string) []string {
-
-    var AnyMethod = "NOT_SET"
-    var methods = []string{AnyMethod, http.MethodGet, http.MethodHead, http.MethodPost,
-        http.MethodPut, http.MethodPatch, http.MethodDelete,
-        http.MethodConnect, http.MethodOptions, http.MethodTrace}
-
-    var matched []string
-    var match mux.RouteMatch
-    var mockReq = &http.Request{}
-
-    for _, method := range methods {
-
-        mockReq.Method = method
-        mockReq.URL, _ = url.Parse(fullPath)
-
-        // if methods not set, it can also match value of mockReq.Method
-        r.Match(mockReq, &match)
-
-        if match.MatchErr != mux.ErrMethodMismatch {
-            if method == AnyMethod {
-                return []string{}
-            }
-            matched = append(matched, method)
-        }
-    }
-    return matched
-}
-
 func (r *Router) Init() error {
-
-    r.buildMethods()
 
     // check api definition
     var pathMethodSet = make(map[string]struct{}, len(r.apis))
@@ -161,10 +126,20 @@ func (r *Router) Init() error {
         if len(api.handlers) == 0 {
             return fmt.Errorf("handlers not set of api path: %s", api.fullPath)
         }
-        if _, ok := pathMethodSet[api.fullPath]; ok {
-            return fmt.Errorf("duplicate api path: %s", api.fullPath)
+
+        methods := api.methods
+        if len(methods) == 0 {
+            methods = allMethods
         }
-        pathMethodSet[api.fullPath] = struct{}{}
+
+        for _, method := range methods {
+            key := fmt.Sprintf("%s %s", method, api.fullPath)
+
+            if _, ok := pathMethodSet[key]; ok {
+                return fmt.Errorf("duplicate api definition: %s", key)
+            }
+            pathMethodSet[key] = struct{}{}
+        }
     }
 
     r.buildHandlerChain()

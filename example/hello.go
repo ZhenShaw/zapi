@@ -19,7 +19,7 @@ func main() {
 
     r.SubApi("/sub2", []*zapi.Api{
         r.NewApi("/hello", &zapi.Context{}, Hello).Methods("GET"),
-        r.NewApi("/hello", &zapi.Context{}, Hello).Methods("GET"),
+        r.NewApi("/hello", &zapi.Context{}, Hello).Methods("POST"),
     })
 
     logs.Error(app.Run())
