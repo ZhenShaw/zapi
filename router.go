@@ -4,6 +4,7 @@ import (
     "fmt"
     "net/http"
     "net/url"
+    "sort"
     "strings"
 
     "github.com/google/uuid"
@@ -36,15 +37,51 @@ func NewRouter() *Router {
     return r
 }
 
-func (r *Router) Add(path string, context IContext, handlers ...IHandler) *mux.Route {
-    api := &Api{
-        Path:     path,
-        Context:  context,
-        Handlers: handlers,
-        Name:     uuid.New().String(),
+func (r *Router) NewApi(path string, context IContext, handlers ...IHandler) *Api {
+    return NewApi(path, context, handlers...)
+}
+
+func (r *Router) Add(path string, context IContext, handlers ...IHandler) *Api {
+    api := r.NewApi(path, context, handlers...)
+    return r.addApi(api)
+}
+
+func (r *Router) Sub(prefix string, middleware ...IHandler) *Router {
+    router := r.copy()
+    router.Router = router.PathPrefix(prefix).Subrouter()
+    router.prefix = router.prefix + prefix
+    router.Use(middleware...)
+    return router
+}
+
+func (r *Router) SubApi(prefix string, apis []*Api, middleware ...IHandler) *Router {
+    router := r.Sub(prefix, middleware...)
+
+    for _, api := range apis {
+        router.addApi(api)
     }
 
-    return r.AddApi(api)
+    return router
+}
+
+func (r *Router) Use(middleware ...IHandler) *Router {
+    r.prefixHandlers[r.prefix] = append(r.prefixHandlers[r.prefix], middleware...)
+    return r
+}
+
+func (r *Router) addApi(api *Api) *Api {
+
+    matchKey := uuid.New().String()
+    emptyFun := func(w http.ResponseWriter, r *http.Request) {}
+
+    api.route = r.Router.HandleFunc(api.path, emptyFun)
+    api.Methods(api.methods...)
+    api.fullPath = r.prefix + api.path
+    api.route.Name(matchKey)
+
+    r.apis[matchKey] = api
+
+    return api
 }
 
 func (r *Router) copy() *Router {
@@ -56,50 +93,32 @@ func (r *Router) copy() *Router {
     }
 }
 
-func (r *Router) Sub(prefix string, middleware ...IHandler) *Router {
-    router := r.copy()
-    router.Router = router.PathPrefix(prefix).Subrouter()
-    router.prefix = router.prefix + prefix
-    router.Use(middleware...)
-    return router
-}
-
-func (r *Router) AddApi(api *Api) *mux.Route {
-
-    api.fullPath = r.prefix + api.Path
-
-    if api.Name == "" {
-        api.Name = uuid.New().String()
-    }
-
-    r.apis[api.Name] = api
-    hf := func(w http.ResponseWriter, r *http.Request) {}
-    route := r.Router.HandleFunc(api.Path, hf).Name(api.Name)
-
-    return route
-}
-
-func (r *Router) Use(middleware ...IHandler) *Router {
-    r.prefixHandlers[r.prefix] = append(r.prefixHandlers[r.prefix], middleware...)
-    return r
-}
-
 // build handler chain for api.
-// execute order: prefix Handlers(middlewares) + api Handlers
+// execute order: prefix handlers(middlewares) + api handlers
 func (r *Router) buildHandlerChain() {
+
+    var prefixes []string
+    for prefix, _ := range r.prefixHandlers {
+        prefixes = append(prefixes, prefix)
+    }
+    sort.Strings(prefixes)
+
     for _, api := range r.apis {
-        for prefix, handlers := range r.prefixHandlers {
+        var mvs []IHandler
+        for _, prefix := range prefixes {
+            handlers := r.prefixHandlers[prefix]
             if strings.HasPrefix(api.fullPath, prefix) {
-                api.Handlers = append(handlers, api.Handlers...)
+                mvs = append(mvs, handlers...)
             }
         }
+        api.handlers = append(mvs, api.handlers...)
     }
 }
 
 // find methods of full-path the api supports.
 func (r *Router) buildMethods() {
     for _, api := range r.apis {
-        api.Methods = matchMethods(r, api.fullPath)
+        api.methods = matchMethods(r, api.fullPath)
     }
 }
 
@@ -137,19 +156,15 @@ func (r *Router) Init() error {
     r.buildMethods()
 
     // check api definition
-    var pathSet = make(map[string]struct{}, len(r.apis))
-    var nameSet = make(map[string]struct{}, len(r.apis))
+    var pathMethodSet = make(map[string]struct{}, len(r.apis))
     for _, api := range r.apis {
-        if len(api.Handlers) == 0 {
+        if len(api.handlers) == 0 {
             return fmt.Errorf("handlers not set of api path: %s", api.fullPath)
         }
-        if _, ok := pathSet[api.fullPath]; ok {
+        if _, ok := pathMethodSet[api.fullPath]; ok {
             return fmt.Errorf("duplicate api path: %s", api.fullPath)
         }
-        if _, ok := nameSet[api.Name]; ok {
-            return fmt.Errorf("duplicate api name: %s", api.Name)
-        }
-        pathSet[api.fullPath] = struct{}{}
+        pathMethodSet[api.fullPath] = struct{}{}
     }
 
     r.buildHandlerChain()

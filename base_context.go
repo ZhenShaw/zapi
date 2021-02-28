@@ -20,17 +20,6 @@ type IContext interface {
     GetWriter() http.ResponseWriter
 }
 
-func NewCtx(c IContext) IContext {
-
-    rv := reflect.ValueOf(c)
-    rt := reflect.Indirect(rv).Type()
-
-    value := reflect.New(rt)
-    ctx := value.Interface().(IContext)
-
-    return ctx
-}
-
 type BaseContext struct {
     Request *http.Request
     Writer  http.ResponseWriter

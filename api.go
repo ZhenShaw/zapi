@@ -2,6 +2,7 @@ package zapi
 
 import (
     "fmt"
+    "github.com/gorilla/mux"
     "reflect"
     "sync"
 )
@@ -11,23 +12,46 @@ import (
 type IHandler interface{}
 
 type Api struct {
-    Name string
+    name string
 
-    Methods []string
-
-    Context IContext
-
-    // Path if the path defined without prefix.
-    Path string
+    // path if the path defined without prefix.
+    path string
 
     // fullPath contacts the prefix and path.
     fullPath string
 
+    methods []string
+
+    context IContext
+
     // handler chain, it stores the middleware and the final handler will be added to the end.
-    Handlers []IHandler
+    handlers []IHandler
 
     // pool for reusing context.
     pool sync.Pool
+
+    route *mux.Route
+}
+
+func NewApi(path string, ctx IContext, handlers ...IHandler) *Api {
+    return &Api{
+        path:     path,
+        context:  ctx,
+        handlers: handlers,
+    }
+}
+
+func (api *Api) Name(name string) *Api {
+    api.name = name
+    return api
+}
+
+func (api *Api) Methods(methods ...string) *Api {
+    api.methods = methods
+    if len(api.methods) > 0 && api.route != nil {
+        api.route.Methods(api.methods...)
+    }
+    return api
 }
 
 func (api *Api) GetContext() IContext {
@@ -36,7 +60,7 @@ func (api *Api) GetContext() IContext {
         return api.pool.Get().(IContext)
     }
     api.pool.New = func() interface{} {
-        return NewCtx(api.Context)
+        return NewCtx(api.context)
     }
     return api.pool.Get().(IContext)
 }
@@ -48,10 +72,10 @@ func (api *Api) PutContext(ctx IContext) {
 
 func (api *Api) CheckHandlers() error {
 
-    rt := reflect.TypeOf(api.Context)
+    rt := reflect.TypeOf(api.context)
     funcSign := fmt.Sprintf("func(%v)", rt)
 
-    for _, h := range api.Handlers {
+    for _, h := range api.handlers {
         sign := fmt.Sprint(reflect.TypeOf(h))
         if sign != funcSign && sign != iFaceFuncSign {
             err := fmt.Errorf("[%s] can only sign as: %s or %s, but got %s",

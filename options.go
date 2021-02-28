@@ -13,6 +13,6 @@ func (f apiOptFunc) apply(api *Api) {
 
 func OptionApiName(name string) ApiOption {
 	return apiOptFunc(func(api *Api) {
-		api.Name = name
+		api.name = name
 	})
 }

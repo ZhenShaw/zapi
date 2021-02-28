@@ -1,23 +1,30 @@
 package main
 
 import (
-	"github.com/zhenshaw/go-lib/logs"
-	"github.com/zhenshaw/zapi"
+    "github.com/zhenshaw/go-lib/logs"
+    "github.com/zhenshaw/zapi"
 )
 
 func main() {
 
-	logs.CloseFileOutput()
+    logs.CloseFileOutput()
 
-	app := zapi.NewApp()
-	r := app.GetRouter()
+    app := zapi.NewApp()
+    r := app.GetRouter()
 
-	r.Use(zapi.DefaultMiddlewares...)
-	r.Add("/ping", &zapi.Context{}, Pong)
+    r.Use(zapi.DefaultMiddlewares...)
+    r.Add("/hello", &zapi.Context{}, Hello)
 
-	logs.Error(app.Run())
+    r.Sub("/sub1").Add("/hello", &zapi.Context{}, Hello).Methods("GET")
+
+    r.SubApi("/sub2", []*zapi.Api{
+        r.NewApi("/hello", &zapi.Context{}, Hello).Methods("GET"),
+        r.NewApi("/hello", &zapi.Context{}, Hello).Methods("GET"),
+    })
+
+    logs.Error(app.Run())
 }
 
-func Pong(z *zapi.Context) {
-	z.Write([]byte("hello world"))
+func Hello(z *zapi.Context) {
+    z.Write([]byte("hello world"))
 }
