@@ -42,6 +42,11 @@ func (z *BaseContext) Write(data []byte) (int, error) {
     return z.Writer.Write(data)
 }
 
+func (z *BaseContext) WriteWithCode(code int, data []byte) (int, error) {
+    z.Writer.WriteHeader(code)
+    return z.Write(data)
+}
+
 func (c *Context) ContentType() string {
     content := c.Request.Header.Get("Content-Type")
     for i, char := range content {
