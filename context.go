@@ -62,6 +62,11 @@ func (c *Context) Bind(obj interface{}) error {
     return bind.Bind(c.Request, obj)
 }
 
+func (c *Context) BindQuery(obj interface{}) error {
+    bind := binding.Query
+    return bind.Bind(c.Request, obj)
+}
+
 func (c *Context) CheckBind(obj interface{}) error {
 
     if err := c.Bind(obj); err != nil {
