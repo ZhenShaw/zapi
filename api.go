@@ -41,8 +41,9 @@ type Api struct {
 func NewApi(path string, ctx IContext, handlers ...IHandler) *Api {
 
     preHandler := func(c IContext) {
-        c.Prepare()
-        c.Next()
+        if c.Prepare() {
+            c.Next()
+        }
     }
 
     for k, h := range handlers {

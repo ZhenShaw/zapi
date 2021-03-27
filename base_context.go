@@ -8,7 +8,7 @@ import (
 type IContext interface {
     Init([]IHandler, http.ResponseWriter, *http.Request)
     Start(IContext)
-    Prepare()
+    Prepare() bool
     Call(IHandler)
     Next()
     Finish()
@@ -19,7 +19,7 @@ type IContext interface {
 
 type baseContext struct {
     Request *http.Request
-    Writer  *Response
+    Writer  http.ResponseWriter
 
     handlers []IHandler
 
@@ -31,8 +31,7 @@ type baseContext struct {
 
 // Init should init all field though it may zero val.
 func (z *baseContext) Init(handlers []IHandler, w http.ResponseWriter, r *http.Request) {
-    z.Writer = &Response{}
-    z.Writer.reset(w)
+    z.Writer = w
     z.Request = r
     z.handlers = handlers
     z.index = 0
@@ -66,7 +65,7 @@ func (z *baseContext) Call(handler IHandler) {
     }
 }
 
-func (z *baseContext) Prepare() {}
+func (z *baseContext) Prepare() bool { return true }
 
 // Start execute the first handler of handler chain.
 // Warning: Do not rewrite unless you known what you are doing.
@@ -83,7 +82,7 @@ func (z *baseContext) Start(ctx IContext) {
 // Warning: Do not rewrite unless you known what you are doing.
 // Next only execute if not Responded.
 func (z *baseContext) Next() {
-    if len(z.handlers) <= z.index || z.Writer.Responded {
+    if len(z.handlers) <= z.index {
         return
     }
     handler := z.handlers[z.index]
