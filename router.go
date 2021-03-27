@@ -49,7 +49,7 @@ func (r *Router) Add(path string, context IContext, handlers ...IHandler) *Api {
     return r.addApi(api)
 }
 
-func (r *Router) Sub(prefix string, middleware ...IHandler) *Router {
+func (r *Router) Sub(prefix string, middleware ...MiddleWare) *Router {
     router := r.copy()
     router.Router = router.PathPrefix(prefix).Subrouter()
     router.prefix = router.prefix + prefix
@@ -57,7 +57,7 @@ func (r *Router) Sub(prefix string, middleware ...IHandler) *Router {
     return router
 }
 
-func (r *Router) SubApi(prefix string, apis []*Api, middleware ...IHandler) *Router {
+func (r *Router) SubApi(prefix string, apis []*Api, middleware ...MiddleWare) *Router {
     router := r.Sub(prefix, middleware...)
 
     for _, api := range apis {
@@ -67,8 +67,10 @@ func (r *Router) SubApi(prefix string, apis []*Api, middleware ...IHandler) *Rou
     return router
 }
 
-func (r *Router) Use(middleware ...IHandler) *Router {
-    r.prefixHandlers[r.prefix] = append(r.prefixHandlers[r.prefix], middleware...)
+func (r *Router) Use(middleware ...MiddleWare) *Router {
+    for _, mv := range middleware {
+        r.prefixHandlers[r.prefix] = append(r.prefixHandlers[r.prefix], IHandler(mv))
+    }
     return r
 }
 
@@ -115,10 +117,6 @@ func (r *Router) buildHandlerChain() {
             }
         }
         api.handlers = append(mvs, api.handlers...)
-
-        for k, h := range api.handlers {
-            api.handlers[k] = WrapHttp(h)
-        }
     }
 }
 
@@ -146,13 +144,14 @@ func (r *Router) Init() error {
         }
     }
 
-    r.buildHandlerChain()
-
     for _, api := range r.apis {
-        if err := api.CheckHandlers(); err != nil {
+        // check handlers function sign defined without prepare handler.
+        if err := api.CheckHandlers(api.handlers[1:]); err != nil {
             return err
         }
     }
+
+    r.buildHandlerChain()
 
     return nil
 }

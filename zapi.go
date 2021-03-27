@@ -94,5 +94,6 @@ func (app *app) HandleRequest(api *Api, w http.ResponseWriter, r *http.Request) 
     ctx := api.GetContext()
     ctx.Init(api.handlers, w, r)
     ctx.Start(ctx)
+    ctx.Finish()
     api.PutContext(ctx)
 }

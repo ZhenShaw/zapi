@@ -12,7 +12,8 @@ func main() {
     app := zapi.NewApp()
     r := app.GetRouter()
 
-    r.Use(zapi.DefaultMiddlewares...)
+    r.Use(zapi.Recover, zapi.AccessLog, zapi.Cors)
+
     r.Add("/hello", &zapi.Context{}, Hello)
 
     r.Sub("/sub1").Add("/hello", &zapi.Context{}, Hello).Methods("GET")

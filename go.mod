@@ -3,7 +3,6 @@ module github.com/zhenshaw/zapi
 go 1.16
 
 require (
-	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef
 	github.com/gin-gonic/gin v1.6.3
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
