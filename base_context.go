@@ -19,7 +19,7 @@ type IContext interface {
 
 type baseContext struct {
     Request *http.Request
-    Writer  http.ResponseWriter
+    Writer  *Response
 
     handlers []IHandler
 
@@ -31,7 +31,8 @@ type baseContext struct {
 
 // Init should init all field though it may zero val.
 func (z *baseContext) Init(handlers []IHandler, w http.ResponseWriter, r *http.Request) {
-    z.Writer = w
+    z.Writer = &Response{}
+    z.Writer.reset(w)
     z.Request = r
     z.handlers = handlers
     z.index = 0

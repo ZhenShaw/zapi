@@ -4,6 +4,7 @@ import (
     "fmt"
     "net/http"
     "runtime"
+    "time"
 
     "github.com/mo7zayed/reqip"
     "github.com/zhenshaw/go-lib/logs"
@@ -28,16 +29,13 @@ func Recover(c *Context) {
 }
 
 func AccessLog(c *Context) {
+    c.Next()
 
     ip := reqip.GetClientIP(c.Request)
-    if ip == "" {
-        ip = "unknown"
-    }
+    elapsed := time.Since(c.Begin)
+    logs.Info("[ACCESS] %d => %s => %s %s %s", c.Writer.Status, elapsed,
+        ip, c.Request.Method, c.Request.URL.String())
 
-    logs.Info("[ACCESS] %s => %s => %s", ip, c.Request.Method,
-        c.Request.URL.Path)
-
-    c.Next()
 }
 
 func Cors(c *Context) {

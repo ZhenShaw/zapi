@@ -18,6 +18,9 @@ func (r *Response) reset(w http.ResponseWriter) {
 // and sets `Responded` to true.
 // Responded:  if true, the response was already sent
 func (r *Response) Write(p []byte) (int, error) {
+    if r.Status == 0 {
+        r.Status = http.StatusOK
+    }
     r.Responded = true
     return r.ResponseWriter.Write(p)
 }
