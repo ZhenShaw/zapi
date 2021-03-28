@@ -31,6 +31,8 @@ func (c *Context) Call(handler IHandler) {
     switch handleFun := handler.(type) {
     case func(*Context):
         handleFun(c)
+    case MiddleWare:
+        handleFun(c)
     default:
         c.baseContext.Call(handler)
     }
