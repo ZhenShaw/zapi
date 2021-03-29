@@ -61,3 +61,7 @@ func (c *Context) BindQuery(obj interface{}) error {
     bind := binding.Query
     return bind.Bind(c.Request, obj)
 }
+
+func (c *Context) RequestWithVars(vars map[string]string) {
+    c.Request = requestWithVars(c.Request, vars)
+}
