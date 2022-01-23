@@ -12,7 +12,7 @@ func main() {
     app := zapi.NewApp()
     r := app.GetRouter()
 
-    r.Use(zapi.Recover, zapi.AccessLog, zapi.Cors)
+    r.Use(zapi.Recover, zapi.AccessLog)
 
     r.Add("/hello", &zapi.Context{}, Hello)
 
@@ -23,7 +23,11 @@ func main() {
         r.NewApi("/hello", &zapi.Context{}, Hello).Methods("POST"),
     })
 
-    logs.Error(app.Run())
+    go func() {
+        logs.Error(app.Run())
+    }()
+
+    app.Shutdown()
 }
 
 func Hello(z *zapi.Context) {

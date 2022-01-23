@@ -8,4 +8,5 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/mo7zayed/reqip v0.0.0-20200520084230-ae375eb9322b
 	github.com/zhenshaw/go-lib v0.0.0-20201211181501-6822df0a7301
+	google.golang.org/grpc v1.38.0
 )

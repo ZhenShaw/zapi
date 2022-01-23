@@ -15,7 +15,7 @@ func WrapHttp(handler IHandler) IHandler {
     switch h := handler.(type) {
     case func(http.ResponseWriter, *http.Request):
         return Wrap(h)
-    case http.HandlerFunc:
+    case http.Handler:
         return Wrap(h.ServeHTTP)
     default:
         return handler

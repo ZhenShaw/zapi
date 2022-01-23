@@ -37,20 +37,3 @@ func AccessLog(c *Context) {
         ip, c.Request.Method, c.Request.URL.String())
 
 }
-
-func Cors(c *Context) {
-    r := c.Request
-    w := c.Writer
-
-    w.Header().Add("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-    w.Header().Add("Access-Control-Allow-Credentials", "true")
-    w.Header().Add("Access-Control-Allow-Methods",
-        "POST, GET, OPTIONS, PATCH, PUT, DELETE")
-
-    if r.Method == http.MethodOptions {
-        w.WriteHeader(http.StatusNoContent)
-        return
-    }
-
-    c.Next()
-}
