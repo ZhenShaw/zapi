@@ -1,9 +1,14 @@
 package zapi
 
-import "net/http"
+import (
+    "bufio"
+    "net"
+    "net/http"
+)
 
 type Response struct {
     http.ResponseWriter
+    http.Hijacker
     Responded bool
     Status    int
 }
@@ -35,4 +40,9 @@ func (r *Response) WriteHeader(code int) {
     r.Status = code
     r.Responded = true
     r.ResponseWriter.WriteHeader(code)
+}
+
+// Hijack implements the http.Hijacker interface.
+func (r *Response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+    return r.ResponseWriter.(http.Hijacker).Hijack()
 }
